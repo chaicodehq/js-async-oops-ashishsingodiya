@@ -73,15 +73,47 @@
  *   // ]
  */
 export function orderChai(type, quantity) {
-  // Your code here
+  const prices = { cutting: 10, special: 20, ginger: 15, masala: 25 };
+  const types = ["cutting", "special", "ginger", "masala"];
+
+  return new Promise((res, rej) => {
+    setTimeout(() => {
+      if (typeof quantity !== "number" || quantity <= 0) {
+        rej(new Error("Kitni chai chahiye bhai?"));
+      }
+      if (!types.includes(type)) {
+        rej(new Error("Yeh chai available nahi hai!"));
+      }
+      res({
+        type,
+        quantity,
+        total: prices[type] * quantity,
+      });
+    }, 100);
+  });
 }
 
 export function checkIngredients(ingredient) {
-  // Your code here
+  const ingredients = ["tea", "milk", "sugar", "ginger", "cardamom"];
+
+  return new Promise((res, rej) => {
+    if (ingredients.includes(ingredient)) {
+      res({ ingredient, available: true });
+    } else {
+      rej(new Error(`${ingredient} khatam ho gaya!`));
+    }
+  });
 }
 
 export function prepareChaiWithTimeout(type, timeoutMs) {
-  // Your code here
+  //  *   - Returns a Promise that uses Promise.race
+  //  *   - Race between:
+  //  *     1. orderChai(type, 1) — the actual chai preparation
+  //  *     2. A timeout Promise that rejects after timeoutMs with
+  //  *        Error message "Bahut der ho gayi, chai nahi bani!"
+  //  *   - If chai is ready before timeout: resolves with chai order
+  //  *   - If timeout fires first: rejects with timeout error
+  
 }
 
 export function processChaiQueue(orders) {
