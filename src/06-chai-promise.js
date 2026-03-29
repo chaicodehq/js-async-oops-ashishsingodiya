@@ -106,16 +106,27 @@ export function checkIngredients(ingredient) {
 }
 
 export function prepareChaiWithTimeout(type, timeoutMs) {
-  //  *   - Returns a Promise that uses Promise.race
-  //  *   - Race between:
-  //  *     1. orderChai(type, 1) — the actual chai preparation
-  //  *     2. A timeout Promise that rejects after timeoutMs with
-  //  *        Error message "Bahut der ho gayi, chai nahi bani!"
-  //  *   - If chai is ready before timeout: resolves with chai order
-  //  *   - If timeout fires first: rejects with timeout error
-  
+  const timeoutPromise = new Promise((res, rej) => {
+    setTimeout(() => {
+      rej(new Error("Bahut der ho gayi, chai nahi bani!"));
+    }, timeoutMs);
+  });
+
+  return Promise.race([orderChai(type, 1), timeoutPromise]);
 }
 
 export function processChaiQueue(orders) {
-  // Your code here
+  if (orders.length === 0) return Promise.resolve([]);
+
+  const promises = orders.map((o) => {
+    return orderChai(o.type, o.quantity)
+      .then((data) => {
+        return { status: "fulfilled", value: data };
+      })
+      .catch((err) => {
+        return { status: "rejected", reason: err.message };
+      });
+  });
+
+  return Promise.all(promises);
 }

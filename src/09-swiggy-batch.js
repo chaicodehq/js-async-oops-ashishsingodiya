@@ -88,25 +88,97 @@
  *   //     { status: "rejected", reason: "Item name required!" }]
  */
 export function prepareOrder(item, prepTime) {
-  // Your code here
+  return new Promise((res, rej) => {
+    if (!item) {
+      return rej(new Error("Item name required!"));
+    }
+    if (typeof prepTime !== "number" || prepTime <= 0) {
+      return rej(new Error("Invalid prep time!"));
+    }
+
+    setTimeout(() => {
+      res({ item, ready: true, prepTime });
+    }, prepTime);
+  });
 }
 
 export function prepareBatch(items) {
-  // Your code here
+  if (items.length === 0) return Promise.resolve([]);
+
+  const promises = items.map((i) => {
+    return prepareOrder(i.name, i.prepTime);
+  });
+
+  return Promise.all(promises);
 }
 
 export function getFirstReady(items) {
-  // Your code here
+  if (items.length === 0) return Promise.reject(new Error("No items to prepare!"));
+
+  const promises = items.map((i) => {
+    return prepareOrder(i.name, i.prepTime);
+  });
+
+  return Promise.race(promises);
 }
 
 export function prepareSafeBatch(items) {
-  // Your code here
+  if (items.length === 0) return Promise.resolve([]);
+
+  const promises = items.map((i) => {
+    return prepareOrder(i.name, i.prepTime);
+  });
+
+  return Promise.allSettled(promises).then((results) =>
+    results.map((result) => {
+      if (result.status === "rejected") {
+        return { status: "rejected", reason: result.reason.message };
+      }
+      return result;
+    })
+  );
 }
 
 export function deliverWithTimeout(orderPromise, timeoutMs) {
-  // Your code here
+  const timeoutPromise = new Promise((res, rej) => {
+    if (timeoutMs <= 0) {
+      return rej(new Error("Invalid timeout!"));
+    }
+    setTimeout(() => {
+      return rej(new Error("Delivery timeout!"));
+    }, timeoutMs);
+  });
+
+  return Promise.race([orderPromise, timeoutPromise]);
 }
 
 export function batchWithRetry(items, maxRetries) {
-  // Your code here
+  //  * Function: batchWithRetry(items, maxRetries)
+  //  *   - Tries prepareBatch(items)
+  //  *   - If it fails, retries up to maxRetries times
+  //  *   - Returns result of first successful attempt
+  //  *   - If all attempts fail, throws the last error
+  //  *   - maxRetries must be >= 0 (0 means no retries, just one attempt)
+  //  *   - Each retry is a fresh call to prepareBatch
+
+  let lastErrorResult;
+
+  const tryPrepare = (retries) => {
+    if (retries < 1) {
+      throw new Error(lastErrorResult);
+    }
+
+    const result = prepareBatch(items)
+      .then((d) => {
+        return d;
+      })
+      .catch((err) => {
+        lastErrorResult = err;
+        return tryPrepare(retries - 1);
+      });
+
+    return result;
+  };
+
+  return tryPrepare(maxRetries + 1);
 }
